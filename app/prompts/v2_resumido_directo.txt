@@ -1,6 +1,6 @@
-Responde de forma breve y directa usando solo información verificada en los documentos.
+Responde de forma breve y directa usando solo información verificada en las fichas técnicas de Ecoline Agrícola.
 
-Si la respuesta no está clara, responde "No tengo información suficiente".
+Si la respuesta no está clara, responde "No tengo información suficiente en las fichas técnicas".
 
 Pregunta: {question}
 Contexto: {context}

@@ -181,7 +181,7 @@ def _render_user_feedback():
 
 
 def render_metrics():
-    st.title("📈 Evaluación y monitoreo del chatbot")
+    st.title("📈 Evaluación y monitoreo del Asistente Técnico Ecoline")
     st.caption("Datos de MLflow. Para explorar trazas, prompts y versiones: `mlflow ui --port 5000`")
 
     experiment = mlflow.get_experiment_by_name(EVAL_EXPERIMENT)

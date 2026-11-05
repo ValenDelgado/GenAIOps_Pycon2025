@@ -1,4 +1,38 @@
-# 🤖 Chatbot GenAI - Caso de Estudio Recursos Humanos
+# Asistente técnico de productos - Ecoline Agrícola
+
+Adaptamos el chatbot de Recursos Humanos del curso para que responda preguntas sobre los productos de Ecoline Agrícola (fertilizantes y bioestimulantes) a partir de sus fichas técnicas 2026. Más abajo se conserva la guía original del curso.
+
+## Cambios frente al repositorio base
+
+- `data/pdfs/`: 3 PDFs con las 30 fichas técnicas, agrupadas en granulados, líquidos y polvos.
+- `app/prompts/`: prompt `asistente_tecnico_ecoline` con tres versiones (v1, v2 y v3 con reglas del negocio).
+- `app/rag_pipeline.py`: cada fragmento lleva `[Producto: X]`, porque solo la primera página de cada ficha dice el nombre del producto. Se apaga con `PRODUCT_TAGGING=0`.
+- `tests/eval_dataset.json`: 20 preguntas (directas, multi-documento, sin respuesta y adversarias) con documento y página.
+- `app/run_eval.py`: evaluadores nuevos `cifras_sustentadas`, `menciona_producto`, `utilidad_tecnica` y `no_inventa_recomendaciones`.
+- Interfaz y experimento del chat renombrados a Ecoline.
+
+## Cómo correrlo
+
+```bash
+cp .env.example .env    # agregar la API key
+python -c "from app.rag_pipeline import save_vectorstore; save_vectorstore()"
+python -m app.prompt_registry
+streamlit run app/ui_streamlit.py
+python app/run_eval.py
+streamlit run app/dashboard.py
+mlflow ui --port 5000
+```
+
+Para comparar configuraciones:
+
+```bash
+PROMPT_VERSION=prompts:/asistente_tecnico_ecoline@v3_tecnico_con_reglas python app/run_eval.py
+RETRIEVER_K=8 python app/run_eval.py
+```
+
+---
+
+# 🤖 Guía original del curso — Chatbot GenAI (caso Recursos Humanos)
 
 Este proyecto demuestra cómo construir, evaluar y automatizar un chatbot de tipo RAG (Retrieval Augmented Generation) con buenas prácticas de **GenAIOps**.
 

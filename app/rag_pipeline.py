@@ -1,6 +1,7 @@
 # app/rag_pipeline.py
 
 import os
+import re
 from langchain.globals import set_verbose, get_verbose
 
 set_verbose(True)  # Si quieres ver logs detallados
@@ -24,22 +25,52 @@ VECTOR_DIR = get_vectorstore_dir()  # vectorstore/openai o vectorstore/fastembed
 
 def load_documents(path=DATA_DIR):
     docs = []
-    for file in os.listdir(path):
+    for file in sorted(os.listdir(path)):
         if file.endswith(".pdf"):
             loader = PyPDFLoader(os.path.join(path, file))
             docs.extend(loader.load())
+    return tag_products(docs)
+
+
+# ---------- Etiquetado por producto (específico del dominio Ecoline) ----------
+# Cada PDF agrupa varias fichas técnicas (una por producto). Solo la primera
+# página de cada ficha dice "Nombre comercial: X"; las demás páginas (beneficios,
+# almacenamiento, aminograma...) no nombran el producto. Sin etiqueta, un fragmento
+# de la página 2 no se puede atribuir a ningún producto y el LLM mezcla datos.
+_NOMBRE_RE = re.compile(r"Nombre\s+comercial\s*:\s*(.+)", re.IGNORECASE)
+PRODUCT_TAGGING = os.getenv("PRODUCT_TAGGING", "1") != "0"
+
+
+def tag_products(docs):
+    """Agrega metadata['product'] a cada página según la última ficha vista en ese PDF."""
+    current, current_source = None, None
+    for doc in docs:
+        source = doc.metadata.get("source")
+        if source != current_source:
+            current, current_source = None, source
+        match = _NOMBRE_RE.search(doc.page_content)
+        if match:
+            current = re.sub(r"\s+", " ", match.group(1)).strip()
+        doc.metadata["product"] = current or "desconocido"
     return docs
+
+
+def split_documents(docs, chunk_size, chunk_overlap):
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    chunks = splitter.split_documents(docs)
+    if PRODUCT_TAGGING:
+        for chunk in chunks:
+            product = chunk.metadata.get("product", "desconocido")
+            chunk.page_content = f"[Producto: {product}]\n{chunk.page_content}"
+    return chunks
+
 
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE") or 512)
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP") or 50)
 
 def save_vectorstore(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, persist_path=VECTOR_DIR):
     docs = load_documents()
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
-    )
-    chunks = splitter.split_documents(docs)
+    chunks = split_documents(docs, chunk_size, chunk_overlap)
     embeddings = get_embeddings()
     vectordb = FAISS.from_documents(chunks, embedding=embeddings)
     vectordb.save_local(persist_path)
@@ -50,16 +81,14 @@ def save_vectorstore(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP, persist
         mlflow.log_param("chunk_overlap", chunk_overlap)
         mlflow.log_param("n_chunks", len(chunks))
         mlflow.log_param("n_docs", len(docs))
+        mlflow.log_param("product_tagging", PRODUCT_TAGGING)
+        mlflow.log_param("n_products", len({d.metadata["product"] for d in docs}))
         mlflow.log_params(describe())
         mlflow.set_tag("vectorstore", persist_path)
 
 def load_vectorstore(chunk_size=512, chunk_overlap=50):
     docs = load_documents()
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
-    )
-    chunks = splitter.split_documents(docs)
+    chunks = split_documents(docs, chunk_size, chunk_overlap)
     embeddings = get_embeddings()
     return FAISS.from_documents(chunks, embedding=embeddings)
 

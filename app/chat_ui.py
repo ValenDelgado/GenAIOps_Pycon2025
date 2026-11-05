@@ -30,9 +30,9 @@ from app.tracking import CHAT_EXPERIMENT, init_tracking, log_user_feedback
 
 EVAL_DATASET = "tests/eval_dataset.json"
 FALLBACK_EXAMPLES = [
-    "¿Qué beneficios de salud ofrece la empresa?",
-    "¿Qué incluye el programa PerksPlus?",
-    "¿Cuáles son las responsabilidades de un analista de datos?",
+    "¿Cuál es la composición garantizada de BRIXXER?",
+    "¿Qué dosis de PGN 100 se recomienda en una caneca de 200 L?",
+    "¿Qué productos de Ecoline contienen ácido giberélico?",
 ]
 
 
@@ -159,8 +159,9 @@ def render_sidebar():
 
 # ---------- Chat ----------
 
-def render_chat(title="🤖 Asistente de Recursos Humanos",
-                subtitle="Pregunta sobre beneficios, políticas y roles de Contoso Electronics."):
+def render_chat(title="🌱 Asistente Técnico de Productos Ecoline",
+                subtitle="Consulta composición, registro ICA, presentaciones y beneficios del portafolio "
+                         "de fertilizantes y bioestimulantes de Ecoline Agrícola (fichas técnicas 2026)."):
     config = render_sidebar()
 
     st.title(title)
@@ -193,7 +194,7 @@ def render_chat(title="🤖 Asistente de Recursos Humanos",
     for idx, msg in enumerate(st.session_state.messages):
         _render_message(idx, msg)
 
-    question = st.chat_input("¿Qué deseas consultar?") or pending
+    question = st.chat_input("Pregunta por un producto de Ecoline...") or pending
     if not question:
         return
 
@@ -202,8 +203,8 @@ def render_chat(title="🤖 Asistente de Recursos Humanos",
     with st.chat_message("user", avatar="👤"):
         st.markdown(question)
 
-    with st.chat_message("assistant", avatar="🤖"):
-        with st.spinner("Consultando documentos..."):
+    with st.chat_message("assistant", avatar="🌱"):
+        with st.spinner("Consultando fichas técnicas..."):
             history = [(m["question"], m["answer"]) for m in st.session_state.messages]
             start = time.perf_counter()
             try:
@@ -237,5 +238,5 @@ def _render_answer(idx, msg):
 def _render_message(idx, msg):
     with st.chat_message("user", avatar="👤"):
         st.markdown(msg["question"])
-    with st.chat_message("assistant", avatar="🤖"):
+    with st.chat_message("assistant", avatar="🌱"):
         _render_answer(idx, msg)
