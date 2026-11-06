@@ -6,7 +6,7 @@ Adaptamos el chatbot de Recursos Humanos del curso para que responda preguntas s
 
 - `data/pdfs/`: 3 PDFs con las 30 fichas técnicas, agrupadas en granulados, líquidos y polvos.
 - `app/prompts/`: prompt `asistente_tecnico_ecoline` con tres versiones (v1, v2 y v3 con reglas del negocio).
-- `app/rag_pipeline.py`: se quita el encabezado repetido de las fichas, se parte por secciones y cada fragmento lleva `[Producto: X | Sección: Y]` (se apaga con `PRODUCT_TAGGING=0`). Si la pregunta nombra un producto, el retriever prioriza los fragmentos de esa ficha (se apaga con `PRODUCT_BOOST=0`).
+- `app/rag_pipeline.py`: se quita el encabezado repetido de las fichas, se parte por secciones y cada fragmento lleva `[Producto: X | Sección: Y]` (se apaga con `PRODUCT_TAGGING=0`). Si la pregunta nombra un producto, el retriever prioriza los fragmentos de esa ficha y la sección pedida; en preguntas tipo "qué productos tienen X" busca el término en todas las fichas y devuelve un fragmento por producto (se apaga con `PRODUCT_BOOST=0`).
 - `tests/eval_dataset.json`: 20 preguntas (directas, multi-documento, sin respuesta y adversarias) con documento y página.
 - `app/run_eval.py`: evaluadores nuevos `cifras_sustentadas`, `menciona_producto`, `utilidad_tecnica` y `no_inventa_recomendaciones`.
 - Interfaz y experimento del chat renombrados a Ecoline.
